@@ -4,8 +4,6 @@ import hand as hd
 
 
 def test():
-    freetype = cv2.freetype.createFreeType2()
-    freetype.loadFontData(fontFileName="simhei.ttf", id=0)
     hand = hd.HandBind(
         camera_id=0,
         handdraw=True,

@@ -3,11 +3,5 @@
     "user": "User",
     "score": 115,
     "level": 2
-  },
-  {
-    "user": "123",
-    "score": 175,
-    "level": 2,
-    "revive_count": 0
   }
 ]
