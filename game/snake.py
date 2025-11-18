@@ -1,5 +1,3 @@
-import json
-import os
 import random
 import threading
 import time
@@ -10,60 +8,6 @@ import pygame as pg
 
 import getquestion as gq
 import hand as hd
-
-
-class UserManager:
-    def __init__(self, filename="users.json"):
-        self.filename = filename
-        self.users = self.load_users()
-        self.current_user = None
-
-    def load_users(self):
-        if os.path.exists(self.filename):
-            try:
-                with open(self.filename, "r", encoding="utf-8") as f:
-                    return json.load(f)
-            except:
-                return []
-        return []
-
-    def save_users(self):
-        try:
-            with open(self.filename, "w", encoding="utf-8") as f:
-                json.dump(self.users, f, ensure_ascii=False, indent=2)
-            return True
-        except:
-            return False
-
-    def get_user(self, username):
-        for user in self.users:
-            if user["user"] == username:
-                return user
-        return None
-
-    def add_user(self, username):
-        if not self.get_user(username):
-            self.users.append(
-                {"user": username, "score": 0, "level": 0, "revive_count": 0}
-            )
-            self.save_users()
-            return True
-        return False
-
-    def update_score(self, username, score, level, revive_count=0):
-        user = self.get_user(username)
-        if user:
-            if score > user["score"] or level > user["level"]:
-                user["score"] = max(user["score"], score)
-                user["level"] = max(user["level"], level)
-                user["revive_count"] = max(user.get("revive_count", 0), revive_count)
-                self.save_users()
-                return True
-        return False
-
-    def get_top_scores(self, count=5):
-        sorted_users = sorted(self.users, key=lambda x: x["score"], reverse=True)
-        return sorted_users[:count]
 
 
 class Obstacle:
@@ -107,29 +51,235 @@ class QuestionManager:
         self.question: None | str = None
         self.questions = [
             {
-                "question": "Python中哪个关键字用于定义函数？",
-                "options": ["A. function", "B. def", "C. define", "D. func"],
-                "correct": 1,
-            },
-            {
-                "question": "下列哪个是Pygame的初始化函数？",
+                "question": "人工智能（AI）的主要目标是什么？",
                 "options": [
-                    "A. pygame.start()",
-                    "B. pygame.init()",
-                    "C. pygame.begin()",
-                    "D. pygame.run()",
+                    "A 取代所有人类工作",
+                    "B 模拟、延伸和扩展人类智能",
+                    "C 制造具有情感的机器人",
+                    "D 实现计算机硬件的高速发展",
                 ],
                 "correct": 1,
             },
+            {
+                "question": "以下哪项是机器学习的定义？",
+                "options": [
+                    "A 计算机通过数据自动改进性能",
+                    "B 人类教计算机如何使用",
+                    "C 只有用于预测股票市场",
+                    "D 一种编程语言",
+                ],
+                "correct": 0,
+            },
+            {
+                "question": "神经网络在AI中常用于什么？",
+                "options": [
+                    "A 模式识别和预测",
+                    "B 连接互联网",
+                    "C 存储大量数据",
+                    "D 只有用于游戏AI",
+                ],
+                "correct": 0,
+            },
+            {
+                "question": "谁提出了“图灵测试”来评估机器智能？",
+                "options": [
+                    "A 艾伦·图灵",
+                    "B 约翰·麦卡锡",
+                    "C 马文·明斯基",
+                    "D 比尔·盖茨",
+                ],
+                "correct": 0,
+            },
+            {
+                "question": "弱人工智能指的是什么？",
+                "options": [
+                    "A 专门用于特定任务的AI",
+                    "B 拥有自我意识的AI",
+                    "C 比人类更聪明的AI",
+                    "D 只能在科幻中存在的AI",
+                ],
+                "correct": 0,
+            },
+            {
+                "question": "AI在自动驾驶汽车中主要发挥什么作用？",
+                "options": [
+                    "A 感知环境并做出决策",
+                    "B 制造汽车零件",
+                    "C 提供娱乐系统",
+                    "D 只有用于导航地图",
+                ],
+                "correct": 0,
+            },
+            {
+                "question": "自然语言处理（NLP）允许计算机做什么？",
+                "options": [
+                    "A 理解和生成人类语言",
+                    "B 处理自然现象",
+                    "C 管理语言学校",
+                    "D 只有用于聊天机器人",
+                ],
+                "correct": 0,
+            },
+            {
+                "question": "计算机视觉是AI的一个领域，专注于什么？",
+                "options": [
+                    "A 从图像和视频中提取信息",
+                    "B 提高摄像头质量",
+                    "C 保护计算机视觉健康",
+                    "D 只有用于监控系统",
+                ],
+                "correct": 0,
+            },
+            {
+                "question": "以下哪项是AI的潜在风险？",
+                "options": [
+                    "A 就业岗位被自动化取代",
+                    "B 计算机速度变慢",
+                    "C 软件bug增加",
+                    "D 只有影响制造业",
+                ],
+                "correct": 0,
+            },
+            {
+                "question": "强化学习在AI中是什么？",
+                "options": [
+                    "A 通过奖励和惩罚学习最优行为",
+                    "B 加强计算机硬件",
+                    "C 只有用于玩游戏",
+                    "D 一种记忆增强技术",
+                ],
+                "correct": 0,
+            },
+            {
+                "question": "深度学习是什么？",
+                "options": [
+                    "A 一种简单的算法",
+                    "B 使用多层神经网络的机器学习方法",
+                    "C 只有用于自然语言处理",
+                    "D 一种数据库技术",
+                ],
+                "correct": 1,
+            },
+            {
+                "question": "AI在医疗领域常用于什么？",
+                "options": [
+                    "A 诊断疾病和辅助治疗",
+                    "B 制造医疗器械",
+                    "C 只有用于手术机器人",
+                    "D 管理医院财务",
+                ],
+                "correct": 0,
+            },
+            {
+                "question": "专家系统是什么？",
+                "options": [
+                    "A 模拟人类专家决策的AI系统",
+                    "B 只有用于法律领域",
+                    "C 一种操作系统",
+                    "D 专家使用的软件",
+                ],
+                "correct": 0,
+            },
+            {
+                "question": "谁通常被称为“人工智能之父”？",
+                "options": [
+                    "A 艾伦·图灵",
+                    "B 约翰·麦卡锡",
+                    "C 马文·明斯基",
+                    "D 比尔·盖茨",
+                ],
+                "correct": 1,
+            },
+            {
+                "question": "监督学习是什么？",
+                "options": [
+                    "A 使用标签数据训练模型",
+                    "B 只有用于分类任务",
+                    "C 无监督的学习方法",
+                    "D 人类监督下的学习",
+                ],
+                "correct": 0,
+            },
+            {
+                "question": "AI在语音识别中主要做什么？",
+                "options": [
+                    "A 将语音转换为文本",
+                    "B 提高语音音量",
+                    "C 只有用于虚拟助手",
+                    "D 生成音乐",
+                ],
+                "correct": 0,
+            },
+            {
+                "question": "生成对抗网络（GAN）用于什么？",
+                "options": [
+                    "A 生成新数据，如图像",
+                    "B 对抗网络攻击",
+                    "C 只有用于游戏AI",
+                    "D 一种安全协议",
+                ],
+                "correct": 0,
+            },
+            {
+                "question": "AI在推荐系统中的应用是什么？",
+                "options": [
+                    "A 根据用户偏好推荐物品",
+                    "B 只有用于电子商务",
+                    "C 推荐朋友",
+                    "D 推荐电影仅限",
+                ],
+                "correct": 0,
+            },
+            {
+                "question": "无监督学习是什么？",
+                "options": [
+                    "A 使用无标签数据发现模式",
+                    "B 没有人类干预的学习",
+                    "C 只有用于聚类",
+                    "D 一种失败的学习方法",
+                ],
+                "correct": 0,
+            },
+            {
+                "question": "AI在图像识别中常见用途是什么？",
+                "options": [
+                    "A 识别物体和场景",
+                    "B 只有用于人脸识别",
+                    "C 美化图像",
+                    "D 存储图像",
+                ],
+                "correct": 0,
+            },
         ]
+        self.question_ready = False
+        self.question_thread = None
 
     def gen_question(self):
-        self.question = gq.convert(gq.get_question())
+        """在后台线程中生成问题"""
+        try:
+            self.question = gq.convert(gq.get_question())
+            self.question_ready = True
+        except Exception as e:
+            print(f"生成问题失败: {e}")
+            # 如果生成问题失败，使用备用问题
+            self.question = random.choice(self.questions)
+            self.question_ready = True
+
+    def start_question_generation(self):
+        """启动问题生成线程"""
+        if not self.question_thread or not self.question_thread.is_alive():
+            self.question_ready = False
+            self.question_thread = threading.Thread(target=self.gen_question)
+            self.question_thread.daemon = True  # 设置为守护线程，主程序退出时自动结束
+            self.question_thread.start()
 
     def get_random_question(self):
-        """获取题目"""
-        return self.question
-        # return random.choice(self.questions)
+        """获取题目，如果问题还没准备好则使用备用问题"""
+        if self.question_ready and self.question:
+            return self.question
+        else:
+            # 返回备用问题
+            return random.choice(self.questions)
 
     def check_answer(self, question, selected_option):
         """检查答案是否正确"""
@@ -137,6 +287,7 @@ class QuestionManager:
 
     def reset(self):
         self.question = None
+        self.question_ready = False
 
 
 class SnakeGame:
@@ -144,7 +295,6 @@ class SnakeGame:
         self.width = width
         self.height = height
         self.max_speed = 8
-        self.user_manager = UserManager()
         self.pinch_threshold = 30
         self.pinch_cooldown = 0.5
         self.last_pinch_time = 0
@@ -157,7 +307,9 @@ class SnakeGame:
         self.current_question = None
         self.revive_in_progress = False  # 标记是否正在进行复活挑战
         self.reset_game()
-        threading.Thread(target=self.question_manager.gen_question)
+
+        # 启动问题生成线程
+        self.question_manager.start_question_generation()
 
         # 初始化字体
         pg.font.init()
@@ -512,12 +664,6 @@ class SnakeGame:
         screen.blit(level_text, (10, 40))
         screen.blit(revive_text, (10, 70))
 
-        if self.user_manager.current_user:
-            user_text = self.font_small.render(
-                f"用户: {self.user_manager.current_user}", True, (255, 255, 255)
-            )
-            screen.blit(user_text, (10, 100))
-
         if self.last_finger_pos is None:
             hint_text = self.font_medium.render(
                 "请把手放在画面内!", True, (255, 255, 0)
@@ -576,33 +722,6 @@ class SnakeGame:
             is_hovered=start_button_hover,
         )
 
-        # 绘制用户选择按钮
-        user_button_rect = (self.width // 2 - 100, self.height // 2 + 50, 200, 60)
-        user_button_hover = self.is_point_in_rect(index_pos, user_button_rect) or (
-            mouse_pos and self.is_point_in_rect(mouse_pos, user_button_rect)
-        )
-        user_button = self.draw_button(
-            screen,
-            "选择用户",
-            (user_button_rect[0], user_button_rect[1]),
-            (user_button_rect[2], user_button_rect[3]),
-            is_hovered=user_button_hover,
-        )
-
-        # 绘制积分榜
-        top_title = self.font_medium.render("排行榜:", True, (255, 255, 0))
-        screen.blit(top_title, (self.width // 2 - 80, self.height // 2 + 150))
-
-        top_scores = self.user_manager.get_top_scores(5)
-        for i, user in enumerate(top_scores):
-            score_text = (
-                f"{i+1}. {user['user']}: {user['score']} (Lv.{user.get('level', 0)})"
-            )
-            score_surface = self.font_small.render(score_text, True, (255, 255, 255))
-            screen.blit(
-                score_surface, (self.width // 2 - 100, self.height // 2 + 180 + i * 25)
-            )
-
         # 检测按钮点击
         buttons_clicked = []
         pinch_detected = self.is_pinch_gesture(index_pos, thumb_pos)
@@ -610,8 +729,6 @@ class SnakeGame:
         if pinch_detected or mouse_click:
             if start_button_hover:
                 buttons_clicked.append("start")
-            elif user_button_hover:
-                buttons_clicked.append("select_user")
 
         # 显示操作提示
         hint1 = self.font_small.render("使用手势或鼠标进行交互", True, (255, 255, 0))
@@ -653,190 +770,6 @@ class SnakeGame:
 
         return buttons_clicked
 
-    def draw_user_selection_screen(
-        self, screen, index_pos, thumb_pos, mouse_pos=None, mouse_click=False
-    ):
-        overlay = pg.Surface((self.width, self.height), pg.SRCALPHA)
-        overlay.fill((0, 0, 0, 180))
-        screen.blit(overlay, (0, 0))
-
-        # 绘制标题
-        title_text = self.font_large.render("选择用户", True, (0, 255, 0))
-        screen.blit(title_text, (self.width // 2 - title_text.get_width() // 2, 50))
-
-        # 绘制用户列表
-        users = self.user_manager.users
-        buttons = []
-        button_height = 50
-        start_y = 100
-
-        for i, user in enumerate(users):
-            button_rect = (
-                self.width // 2 - 150,
-                start_y + i * (button_height + 10),
-                300,
-                button_height,
-            )
-            is_hovered = self.is_point_in_rect(index_pos, button_rect) or (
-                mouse_pos and self.is_point_in_rect(mouse_pos, button_rect)
-            )
-            self.draw_button(
-                screen,
-                f"{user['user']} (Lv.{user.get('level', 0)})",
-                (button_rect[0], button_rect[1]),
-                (button_rect[2], button_rect[3]),
-                is_hovered,
-            )
-            buttons.append((user["user"], button_rect))
-
-        # 绘制新用户按钮
-        new_user_button_rect = (
-            self.width // 2 - 150,
-            start_y + len(users) * (button_height + 10) + 20,
-            300,
-            button_height,
-        )
-        new_user_hover = self.is_point_in_rect(index_pos, new_user_button_rect) or (
-            mouse_pos and self.is_point_in_rect(mouse_pos, new_user_button_rect)
-        )
-        self.draw_button(
-            screen,
-            "新建用户",
-            (new_user_button_rect[0], new_user_button_rect[1]),
-            (new_user_button_rect[2], new_user_button_rect[3]),
-            new_user_hover,
-        )
-
-        # 绘制返回按钮
-        back_button_rect = (self.width // 2 - 80, self.height - 80, 160, 50)
-        back_hover = self.is_point_in_rect(index_pos, back_button_rect) or (
-            mouse_pos and self.is_point_in_rect(mouse_pos, back_button_rect)
-        )
-        self.draw_button(
-            screen,
-            "返回",
-            (back_button_rect[0], back_button_rect[1]),
-            (back_button_rect[2], back_button_rect[3]),
-            back_hover,
-        )
-
-        # 检测按钮点击
-        buttons_clicked = []
-        pinch_detected = self.is_pinch_gesture(index_pos, thumb_pos)
-
-        if pinch_detected or mouse_click:
-            for username, rect in buttons:
-                if self.is_point_in_rect(index_pos, rect) or (
-                    mouse_pos and self.is_point_in_rect(mouse_pos, rect)
-                ):
-                    buttons_clicked.append(("select", username))
-
-            if new_user_hover:
-                buttons_clicked.append(("new_user",))
-
-            if back_hover:
-                buttons_clicked.append(("back",))
-
-        # 显示操作提示
-        hint_text = self.font_small.render(
-            "使用手势或鼠标进行交互", True, (255, 255, 0)
-        )
-        screen.blit(
-            hint_text, (self.width // 2 - hint_text.get_width() // 2, self.height - 120)
-        )
-
-        # 绘制触摸光标
-        if index_pos:
-            self.draw_cursor(screen, index_pos)
-
-        # 绘制鼠标位置（如果使用鼠标）
-        if mouse_pos:
-            pg.draw.circle(screen, (255, 255, 0), mouse_pos, 8)
-
-        return buttons_clicked
-
-    def draw_new_user_screen(
-        self,
-        screen,
-        index_pos,
-        thumb_pos,
-        current_text="",
-        mouse_pos=None,
-        mouse_click=False,
-    ):
-        overlay = pg.Surface((self.width, self.height), pg.SRCALPHA)
-        overlay.fill((0, 0, 0, 180))
-        screen.blit(overlay, (0, 0))
-
-        # 绘制标题
-        title_text = self.font_large.render("创建新用户", True, (0, 255, 0))
-        screen.blit(title_text, (self.width // 2 - title_text.get_width() // 2, 50))
-
-        # 绘制输入框
-        input_box = (self.width // 2 - 150, 120, 300, 50)
-        pg.draw.rect(
-            screen,
-            (255, 255, 255),
-            (input_box[0], input_box[1], input_box[2], input_box[3]),
-            2,
-        )
-
-        # 绘制当前文本
-        if current_text:
-            text_surface = self.font_medium.render(current_text, True, (255, 255, 255))
-            screen.blit(text_surface, (input_box[0] + 10, input_box[1] + 15))
-        else:
-            placeholder = self.font_medium.render(
-                "输入用户名...", True, (150, 150, 150)
-            )
-            screen.blit(placeholder, (input_box[0] + 10, input_box[1] + 15))
-
-        # 绘制确认按钮
-        confirm_button_rect = (self.width // 2 - 150, 190, 140, 50)
-        confirm_hover = self.is_point_in_rect(index_pos, confirm_button_rect) or (
-            mouse_pos and self.is_point_in_rect(mouse_pos, confirm_button_rect)
-        )
-        self.draw_button(
-            screen,
-            "确认",
-            (confirm_button_rect[0], confirm_button_rect[1]),
-            (confirm_button_rect[2], confirm_button_rect[3]),
-            confirm_hover,
-        )
-
-        # 绘制取消按钮
-        cancel_button_rect = (self.width // 2 + 10, 190, 140, 50)
-        cancel_hover = self.is_point_in_rect(index_pos, cancel_button_rect) or (
-            mouse_pos and self.is_point_in_rect(mouse_pos, cancel_button_rect)
-        )
-        self.draw_button(
-            screen,
-            "取消",
-            (cancel_button_rect[0], cancel_button_rect[1]),
-            (cancel_button_rect[2], cancel_button_rect[3]),
-            cancel_hover,
-        )
-
-        # 检测按钮点击
-        buttons_clicked = []
-        pinch_detected = self.is_pinch_gesture(index_pos, thumb_pos)
-
-        if pinch_detected or mouse_click:
-            if confirm_hover:
-                buttons_clicked.append(("confirm", current_text))
-            elif cancel_hover:
-                buttons_clicked.append(("cancel",))
-
-        # 绘制触摸光标
-        if index_pos:
-            self.draw_cursor(screen, index_pos)
-
-        # 绘制鼠标位置（如果使用鼠标）
-        if mouse_pos:
-            pg.draw.circle(screen, (255, 255, 0), mouse_pos, 8)
-
-        return buttons_clicked, input_box
-
     def draw_revive_question_screen(
         self, screen, index_pos, thumb_pos, mouse_pos=None, mouse_click=False
     ):
@@ -856,6 +789,7 @@ class SnakeGame:
         screen.blit(revive_text, (self.width // 2 - revive_text.get_width() // 2, 100))
 
         # 绘制问题
+        option_rects = []  # 初始化option_rects，防止未定义错误
         if self.current_question:
             question_text = self.font_medium.render(
                 self.current_question["question"], True, (255, 255, 255)
@@ -866,7 +800,6 @@ class SnakeGame:
 
             # 绘制选项
             options = self.current_question["options"]
-            option_rects = []
             option_height = 50
             start_y = 200
 
@@ -888,6 +821,15 @@ class SnakeGame:
                     is_hovered,
                 )
                 option_rects.append((i, option_rect))
+        else:
+            # 如果没有问题，显示提示信息
+            no_question_text = self.font_medium.render(
+                "正在加载题目...", True, (255, 255, 255)
+            )
+            screen.blit(
+                no_question_text,
+                (self.width // 2 - no_question_text.get_width() // 2, 150),
+            )
 
         # 检测选项点击
         selected_option = None
@@ -944,16 +886,6 @@ class SnakeGame:
             (self.width // 2 - level_text.get_width() // 2, self.height // 2 - 20),
         )
 
-        # 显示当前用户
-        if self.user_manager.current_user:
-            user_text = self.font_medium.render(
-                f"用户: {self.user_manager.current_user}", True, (255, 255, 255)
-            )
-            screen.blit(
-                user_text,
-                (self.width // 2 - user_text.get_width() // 2, self.height // 2 + 10),
-            )
-
         # 显示复活次数信息
         if self.current_revive_chances == 0:
             no_revive_text = self.font_medium.render(
@@ -980,17 +912,17 @@ class SnakeGame:
             is_hovered=restart_hover,
         )
 
-        # 绘制用户选择按钮
-        user_button_rect = (self.width // 2 - 100, self.height // 2 + 120, 200, 60)
-        user_hover = self.is_point_in_rect(index_pos, user_button_rect) or (
-            mouse_pos and self.is_point_in_rect(mouse_pos, user_button_rect)
+        # 绘制返回主菜单按钮
+        menu_button_rect = (self.width // 2 - 100, self.height // 2 + 120, 200, 60)
+        menu_hover = self.is_point_in_rect(index_pos, menu_button_rect) or (
+            mouse_pos and self.is_point_in_rect(mouse_pos, menu_button_rect)
         )
         self.draw_button(
             screen,
-            "选择用户",
-            (user_button_rect[0], user_button_rect[1]),
-            (user_button_rect[2], user_button_rect[3]),
-            is_hovered=user_hover,
+            "返回主菜单",
+            (menu_button_rect[0], menu_button_rect[1]),
+            (menu_button_rect[2], menu_button_rect[3]),
+            is_hovered=menu_hover,
         )
 
         # 检测按钮点击
@@ -1000,8 +932,8 @@ class SnakeGame:
         if pinch_detected or mouse_click:
             if restart_hover:
                 buttons_clicked.append("restart")
-            elif user_hover:
-                buttons_clicked.append("select_user")
+            elif menu_hover:
+                buttons_clicked.append("menu")
 
         # 绘制触摸光标
         if index_pos:
@@ -1037,15 +969,7 @@ class Game:
 
         # 游戏状态
         self.game_state = "start_screen"
-        self.new_user_text = ""
-        self.last_key_time = 0
         self.mouse_clicked = False
-
-        # 添加一些调试用户
-        if not self.snake_game.user_manager.users:
-            self.snake_game.user_manager.add_user("玩家1")
-            self.snake_game.user_manager.add_user("玩家2")
-            self.snake_game.user_manager.add_user("玩家3")
 
     def loop(self):
         for event in pg.event.get():
@@ -1108,31 +1032,6 @@ class Game:
 
     def handle_keyboard(self, event):
         """处理键盘输入"""
-        current_time = time.time()
-
-        if self.game_state == "new_user":
-            if current_time - self.last_key_time > 0.1:  # 防止按键重复
-                self.last_key_time = current_time
-
-                if event.key == pg.K_BACKSPACE:
-                    self.new_user_text = self.new_user_text[:-1]
-                elif event.key == pg.K_RETURN:
-                    if self.new_user_text:
-                        if self.snake_game.user_manager.add_user(self.new_user_text):
-                            self.snake_game.user_manager.current_user = (
-                                self.new_user_text
-                            )
-                            self.game_state = "playing"
-                            print(f"新用户已创建: {self.new_user_text}")
-                elif event.key == pg.K_ESCAPE:
-                    self.game_state = "user_selection"
-                else:
-                    # 处理字母和数字输入
-                    if len(self.new_user_text) < 15:
-                        char = event.unicode
-                        if char.isalnum() or char in ["_", "-"]:
-                            self.new_user_text += char
-
         # 全局快捷键
         if event.key == pg.K_q:
             self.quit = True
@@ -1162,45 +1061,7 @@ class Game:
 
             for button in buttons_clicked:
                 if button == "start":
-                    if self.snake_game.user_manager.current_user:
-                        self.game_state = "playing"
-                    else:
-                        self.game_state = "user_selection"
-                elif button == "select_user":
-                    self.game_state = "user_selection"
-
-        elif self.game_state == "user_selection":
-            buttons_clicked = self.snake_game.draw_user_selection_screen(
-                self.screen, index_pos, thumb_pos, mouse_pos, mouse_click
-            )
-
-            for button in buttons_clicked:
-                if button[0] == "select":
-                    self.snake_game.user_manager.current_user = button[1]
                     self.game_state = "playing"
-                elif button[0] == "new_user":
-                    self.game_state = "new_user"
-                    self.new_user_text = ""
-                elif button[0] == "back":
-                    self.game_state = "start_screen"
-
-        elif self.game_state == "new_user":
-            buttons_clicked, input_box = self.snake_game.draw_new_user_screen(
-                self.screen,
-                index_pos,
-                thumb_pos,
-                self.new_user_text,
-                mouse_pos,
-                mouse_click,
-            )
-
-            for button in buttons_clicked:
-                if button[0] == "confirm" and button[1]:
-                    if self.snake_game.user_manager.add_user(button[1]):
-                        self.snake_game.user_manager.current_user = button[1]
-                        self.game_state = "playing"
-                elif button[0] == "cancel":
-                    self.game_state = "user_selection"
 
         elif self.game_state == "playing":
             if not self.snake_game.game_over:
@@ -1217,13 +1078,6 @@ class Game:
                     self.game_state = "revive_question"
                 else:
                     # 没有复活机会，直接游戏结束
-                    if self.snake_game.user_manager.current_user:
-                        self.snake_game.user_manager.update_score(
-                            self.snake_game.user_manager.current_user,
-                            self.snake_game.score,
-                            self.snake_game.current_level,
-                            self.snake_game.current_revive_chances,
-                        )
                     self.game_state = "game_over"
 
         elif self.game_state == "revive_question":
@@ -1244,20 +1098,12 @@ class Game:
                     self.snake_game.current_revive_chances -= 1
                     print("回答正确! 已复活。")
                 else:
-                    # 答错了，减少复活次数并直接游戏结束
-                    # self.snake_game.current_revive_chances -= 1
+                    # 答错了，直接游戏结束
                     print(
                         f"回答错误! 剩余复活次数: {self.snake_game.current_revive_chances}"
                     )
 
                     # 直接游戏结束
-                    if self.snake_game.user_manager.current_user:
-                        self.snake_game.user_manager.update_score(
-                            self.snake_game.user_manager.current_user,
-                            self.snake_game.score,
-                            self.snake_game.current_level,
-                            self.snake_game.current_revive_chances,
-                        )
                     self.game_state = "game_over"
 
         elif self.game_state == "game_over":
@@ -1270,8 +1116,8 @@ class Game:
                     self.snake_game.current_level = 1
                     self.snake_game.reset_game()
                     self.game_state = "playing"
-                elif button == "select_user":
-                    self.game_state = "user_selection"
+                elif button == "menu":
+                    self.game_state = "start_screen"
 
     def __del__(self):
         pg.quit()
