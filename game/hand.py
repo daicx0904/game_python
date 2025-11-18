@@ -57,7 +57,7 @@ class HandBind:
             self.fps = self.frame_count / elapsed_time
             self.frame_count = 0
             self.start_time = time.time()
-
+        # img = cv2.flip(img, 1)
         cv2.putText(
             img,
             f"FPS: {self.fps:.2f}",

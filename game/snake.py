@@ -81,7 +81,7 @@ class QuestionManager:
                 "correct": 0,
             },
             {
-                "question": "谁提出了“图灵测试”来评估机器智能？",
+                "question": '谁提出了"图灵测试"来评估机器智能？',
                 "options": [
                     "A 艾伦·图灵",
                     "B 约翰·麦卡锡",
@@ -181,7 +181,7 @@ class QuestionManager:
                 "correct": 0,
             },
             {
-                "question": "谁通常被称为“人工智能之父”？",
+                "question": '谁通常被称为"人工智能之父"？',
                 "options": [
                     "A 艾伦·图灵",
                     "B 约翰·麦卡锡",
@@ -261,7 +261,6 @@ class QuestionManager:
             self.question_ready = True
         except Exception as e:
             print(f"生成问题失败: {e}")
-            # 如果生成问题失败，使用备用问题
             self.question = random.choice(self.questions)
             self.question_ready = True
 
@@ -270,7 +269,7 @@ class QuestionManager:
         if not self.question_thread or not self.question_thread.is_alive():
             self.question_ready = False
             self.question_thread = threading.Thread(target=self.gen_question)
-            self.question_thread.daemon = True  # 设置为守护线程，主程序退出时自动结束
+            self.question_thread.daemon = True
             self.question_thread.start()
 
     def get_random_question(self):
@@ -278,7 +277,6 @@ class QuestionManager:
         if self.question_ready and self.question:
             return self.question
         else:
-            # 返回备用问题
             return random.choice(self.questions)
 
     def check_answer(self, question, selected_option):
@@ -291,49 +289,54 @@ class QuestionManager:
 
 
 class SnakeGame:
-    def __init__(self, width=640, height=480):
-        self.width = width
-        self.height = height
-        self.max_speed = 8
-        self.pinch_threshold = 30
+    def __init__(self, width=640, height=480, scale_factor=1.0):
+        self.scale_factor = scale_factor
+        self.base_width = width
+        self.base_height = height
+        self.width = int(width * scale_factor)
+        self.height = int(height * scale_factor)
+
+        self.max_speed = 8 * scale_factor
+        self.pinch_threshold = 20 * scale_factor
         self.pinch_cooldown = 0.5
         self.last_pinch_time = 0
         self.obstacles = []
         self.current_level = 1
         self.max_level = 10
         self.question_manager = QuestionManager()
-        self.max_revive_chances = 3  # 最大复活次数
-        self.current_revive_chances = self.max_revive_chances  # 当前剩余复活次数
+        self.max_revive_chances = 3
+        self.current_revive_chances = self.max_revive_chances
         self.current_question = None
-        self.revive_in_progress = False  # 标记是否正在进行复活挑战
-        self.reset_game()
+        self.revive_in_progress = False
 
-        # 启动问题生成线程
+        pg.font.init()
+        font_size_large = max(24, int(36 * scale_factor))
+        font_size_medium = max(18, int(24 * scale_factor))
+        font_size_small = max(14, int(18 * scale_factor))
+
+        self.font_large = pg.font.SysFont("simhei", font_size_large)
+        self.font_medium = pg.font.SysFont("simhei", font_size_medium)
+        self.font_small = pg.font.SysFont("simhei", font_size_small)
+
+        self.cursor_color = (255, 255, 0)
+        self.pinch_active = False
+
         self.question_manager.start_question_generation()
 
-        # 初始化字体
-        pg.font.init()
-        self.font_large = pg.font.SysFont("simhei", 36)  # 改为中文字体
-        self.font_medium = pg.font.SysFont("simhei", 24)
-        self.font_small = pg.font.SysFont("simhei", 18)
-
-        # 触摸光标状态
-        self.cursor_color = (255, 255, 0)  # 默认黄色
-        self.pinch_active = False
+        self.reset_game()
 
     def reset_game(self):
         self.question_manager.reset()
-        # 使用列表套元组存储蛇的每个节点坐标
         start_x, start_y = self.width // 2, self.height // 2
         self.snake_pos = [(start_x, start_y)]
 
-        # 初始蛇身 - 确保节点之间有固定距离
-        segment_distance = 20  # 节点间距
+        segment_distance = 20 * self.scale_factor
         for i in range(1, 3):
             self.snake_pos.append((start_x - i * segment_distance, start_y))
 
         self.snake_length = 3
         self.food_pos = self.generate_food()
+
         self.generate_obstacles()
 
         self.score = 0
@@ -341,38 +344,86 @@ class SnakeGame:
         self.last_finger_pos = None
         self.last_thumb_pos = None
         self.last_move_time = time.time()
-        self.last_head_pos = self.snake_pos[0]  # 记录上次蛇头位置
+        self.last_head_pos = self.snake_pos[0]
 
-        # 重置复活次数（开始新游戏时重置）
         self.current_revive_chances = self.max_revive_chances
         self.revive_in_progress = False
 
     def generate_obstacles(self):
         self.obstacles = []
-        base_count = 2 + self.current_level * random.randint(5, 15)
+        base_count = 2 + self.current_level * random.randint(5, 10)
+
+        safe_radius = 150 * self.scale_factor
+        safe_center = (self.width // 2, self.height // 2)
 
         for _ in range(base_count):
-            min_size = 20 + self.current_level * random.randint(5, 10)
-            max_size = 40 + self.current_level * random.randint(15, 20)
-            width = random.randint(min_size, max_size)
-            height = random.randint(min_size, max_size)
+            min_size = (
+                20 + self.current_level * random.randint(1, 5)
+            ) * self.scale_factor
+            max_size = (
+                40 + self.current_level * random.randint(5, 10)
+            ) * self.scale_factor
+            width = random.randint(int(min_size), int(max_size))
+            height = random.randint(int(min_size), int(max_size))
 
-            x = random.randint(50, self.width - width - 50)
-            y = random.randint(50, self.height - height - 50)
+            max_attempts = 50
+            obstacle_placed = False
 
-            obstacle_type = "rectangle"
-            if random.random() < self.current_level * 0.08:
-                obstacle_type = "circle"
+            for attempt in range(max_attempts):
+                x = random.randint(50, self.width - width - 50)
+                y = random.randint(50, self.height - height - 50)
 
-            obstacle = Obstacle(x, y, width, height, obstacle_type)
+                obstacle_center = (x + width // 2, y + height // 2)
+                distance_to_safe = (
+                    (obstacle_center[0] - safe_center[0]) ** 2
+                    + (obstacle_center[1] - safe_center[1]) ** 2
+                ) ** 0.5
 
-            if not any(
-                obstacle.contains_point(pos) for pos in self.snake_pos
-            ) and not obstacle.contains_point(self.food_pos):
-                self.obstacles.append(obstacle)
+                if distance_to_safe < safe_radius:
+                    continue
+
+                overlap_with_snake = any(
+                    self.distance((x + width // 2, y + height // 2), pos)
+                    < (min(width, height) // 2 + 50 * self.scale_factor)
+                    for pos in self.snake_pos
+                )
+
+                overlap_with_food = self.distance(
+                    (x + width // 2, y + height // 2), self.food_pos
+                ) < (min(width, height) // 2 + 30 * self.scale_factor)
+
+                overlap_with_obstacles = any(
+                    self.distance(
+                        (x + width // 2, y + height // 2),
+                        (obs.x + obs.width // 2, obs.y + obs.height // 2),
+                    )
+                    < (
+                        min(width, height) // 2
+                        + min(obs.width, obs.height) // 2
+                        + 20 * self.scale_factor
+                    )
+                    for obs in self.obstacles
+                )
+
+                if (
+                    not overlap_with_snake
+                    and not overlap_with_food
+                    and not overlap_with_obstacles
+                ):
+                    obstacle_type = "rectangle"
+                    if random.random() < self.current_level * 0.08:
+                        obstacle_type = "circle"
+
+                    obstacle = Obstacle(x, y, width, height, obstacle_type)
+                    self.obstacles.append(obstacle)
+                    obstacle_placed = True
+                    break
+
+            if not obstacle_placed:
+                continue
 
         if self.current_level >= 5:
-            border_width = 10
+            border_width = 10 * self.scale_factor
             self.obstacles.append(Obstacle(0, 0, self.width, border_width))
             self.obstacles.append(Obstacle(0, 0, border_width, self.height))
             self.obstacles.append(
@@ -384,7 +435,8 @@ class SnakeGame:
 
         if self.current_level >= 8:
             center_x, center_y = self.width // 2, self.height // 2
-            cross_width, cross_height = 20, 100
+            cross_width = 20 * self.scale_factor
+            cross_height = 100 * self.scale_factor
             self.obstacles.append(
                 Obstacle(
                     center_x - cross_width // 2,
@@ -403,15 +455,19 @@ class SnakeGame:
             )
 
     def generate_food(self):
-        while True:
+        max_attempts = 100  # 增加最大尝试次数
+        for attempt in range(max_attempts):
             food_pos = (
                 random.randint(50, self.width - 50),
                 random.randint(50, self.height - 50),
             )
             if all(
-                self.distance(food_pos, pos) > 40 for pos in self.snake_pos
+                self.distance(food_pos, pos) > 50 * self.scale_factor
+                for pos in self.snake_pos
             ) and not any(obs.contains_point(food_pos) for obs in self.obstacles):
                 return food_pos
+
+        return (self.width // 4, self.height // 4)
 
     def distance(self, pos1, pos2):
         return ((pos1[0] - pos2[0]) ** 2 + (pos1[1] - pos2[1]) ** 2) ** 0.5
@@ -445,10 +501,8 @@ class SnakeGame:
 
     def update_snake_position(self, new_head):
         """更新蛇身位置 - 使用经典的跟随算法"""
-        # 将新蛇头插入列表开头
         self.snake_pos.insert(0, new_head)
 
-        # 如果蛇身长度超过设定长度，移除尾部
         if len(self.snake_pos) > self.snake_length:
             self.snake_pos.pop()
 
@@ -456,41 +510,33 @@ class SnakeGame:
         self, point, segment_start, segment_end, threshold=8
     ):
         """检查点是否与线段碰撞"""
-        # 计算线段长度
         segment_length = self.distance(segment_start, segment_end)
 
-        # 如果线段长度为0，直接检查点与线段起点的距离
         if segment_length == 0:
             return self.distance(point, segment_start) < threshold
 
-        # 计算点到线段的投影比例
         t = (
             (point[0] - segment_start[0]) * (segment_end[0] - segment_start[0])
             + (point[1] - segment_start[1]) * (segment_end[1] - segment_start[1])
         ) / (segment_length * segment_length)
 
-        # 限制投影比例在[0,1]范围内
         t = max(0, min(1, t))
 
-        # 计算投影点
         projection = (
             segment_start[0] + t * (segment_end[0] - segment_start[0]),
             segment_start[1] + t * (segment_end[1] - segment_start[1]),
         )
 
-        # 计算点到投影点的距离
         return self.distance(point, projection) < threshold
 
     def check_self_collision(self, head_pos):
         """检查蛇头是否与蛇身碰撞"""
-        # 检查与节点的碰撞（跳过前几个节点）
         for i, pos in enumerate(self.snake_pos):
             if i < 3:  # 跳过前3个节点
                 continue
-            if self.distance(head_pos, pos) < 12:
+            if self.distance(head_pos, pos) < 12 * self.scale_factor:
                 return True
 
-        # 检查与线段的碰撞（跳过前几个线段）
         for i in range(1, len(self.snake_pos) - 3):  # 跳过前几个线段
             if self.check_collision_with_segment(
                 head_pos, self.snake_pos[i], self.snake_pos[i + 1]
@@ -502,11 +548,10 @@ class SnakeGame:
     def revive_player(self):
         """复活玩家 - 保留分数和关卡，只重置蛇的位置"""
         if self.current_revive_chances > 0:
-            # 重置蛇的位置但不重置分数和关卡
             start_x, start_y = self.width // 2, self.height // 2
             self.snake_pos = [(start_x, start_y)]
 
-            segment_distance = 20
+            segment_distance = 20 * self.scale_factor
             for i in range(1, 3):
                 self.snake_pos.append((start_x - i * segment_distance, start_y))
 
@@ -528,7 +573,7 @@ class SnakeGame:
             return
 
         current_time = time.time()
-        if current_time - self.last_move_time < 0.05:  # 控制移动频率
+        if current_time - self.last_move_time < 0.05:
             return
         self.last_move_time = current_time
 
@@ -544,8 +589,8 @@ class SnakeGame:
             self.last_thumb_pos = thumb_pos
 
         x, y = finger_pos
-        x = max(20, min(self.width - 20, x))
-        y = max(20, min(self.height - 20, y))
+        x = max(20 * self.scale_factor, min(self.width - 20 * self.scale_factor, x))
+        y = max(20 * self.scale_factor, min(self.height - 20 * self.scale_factor, y))
         finger_pos = (x, y)
 
         current_head = self.snake_pos[0]
@@ -553,27 +598,26 @@ class SnakeGame:
         dy = finger_pos[1] - current_head[1]
         dist = self.distance(current_head, finger_pos)
 
-        # 只有移动足够远时才更新位置
-        if dist < 3:
+        if dist < 3 * self.scale_factor:
             return
 
-        # 限制移动速度
         move_dist = min(dist, self.max_speed)
 
-        # 计算移动方向
         dir_x = dx / dist
         dir_y = dy / dist
 
-        # 计算新的蛇头位置
         new_head = (
             int(current_head[0] + dir_x * move_dist),
             int(current_head[1] + dir_y * move_dist),
         )
 
-        # 限制新位置在屏幕范围内
         new_x, new_y = new_head
-        new_x = max(15, min(self.width - 15, new_x))
-        new_y = max(15, min(self.height - 15, new_y))
+        new_x = max(
+            15 * self.scale_factor, min(self.width - 15 * self.scale_factor, new_x)
+        )
+        new_y = max(
+            15 * self.scale_factor, min(self.height - 15 * self.scale_factor, new_y)
+        )
         new_head = (new_x, new_y)
 
         # 检查是否撞到障碍物
@@ -584,10 +628,10 @@ class SnakeGame:
 
         # 检查是否撞到边界
         if (
-            new_head[0] < 5
-            or new_head[0] > self.width - 5
-            or new_head[1] < 5
-            or new_head[1] > self.height - 5
+            new_head[0] < 5 * self.scale_factor
+            or new_head[0] > self.width - 5 * self.scale_factor
+            or new_head[1] < 5 * self.scale_factor
+            or new_head[1] > self.height - 5 * self.scale_factor
         ):
             self.game_over = True
             return
@@ -597,11 +641,9 @@ class SnakeGame:
             self.game_over = True
             return
 
-        # 更新蛇的位置
         self.update_snake_position(new_head)
 
-        # 检查是否吃到食物
-        if self.distance(new_head, self.food_pos) < 25:
+        if self.distance(new_head, self.food_pos) < 25 * self.scale_factor:
             base_score = 10
             level_bonus = self.current_level * 5
             self.score += base_score + level_bonus
@@ -617,40 +659,35 @@ class SnakeGame:
             self.food_pos = self.generate_food()
 
     def draw(self, screen, finger_pos=None):
-        # 绘制障碍物
         for obstacle in self.obstacles:
             obstacle.draw(screen)
 
-        # 绘制蛇身 - 使用线段连接所有节点
         if len(self.snake_pos) > 1:
-            # 绘制所有连接线段
             for i in range(len(self.snake_pos) - 1):
                 start_pos = self.snake_pos[i]
                 end_pos = self.snake_pos[i + 1]
 
-                # 线段颜色渐变
                 color_ratio = i / len(self.snake_pos)
                 color = (0, int(200 * (1 - color_ratio)), 0)
 
-                # 绘制线段
-                pg.draw.line(screen, color, start_pos, end_pos, 12)
+                line_width = max(6, int(12 * self.scale_factor))
+                pg.draw.line(screen, color, start_pos, end_pos, line_width)
 
-        # 绘制蛇头
         if self.snake_pos:
             head_pos = self.snake_pos[0]
-            pg.draw.circle(screen, (0, 255, 0), head_pos, 12)  # 蛇头
-            pg.draw.circle(screen, (255, 255, 255), head_pos, 12, 2)  # 边框
+            head_radius = max(8, int(12 * self.scale_factor))
+            pg.draw.circle(screen, (0, 255, 0), head_pos, head_radius)  # 蛇头
+            pg.draw.circle(screen, (255, 255, 255), head_pos, head_radius, 2)  # 边框
 
-        # 绘制食物
-        pg.draw.circle(screen, (255, 0, 0), self.food_pos, 12)
-        pg.draw.circle(screen, (255, 255, 255), self.food_pos, 12, 2)
+        food_radius = max(8, int(12 * self.scale_factor))
+        pg.draw.circle(screen, (255, 0, 0), self.food_pos, food_radius)
+        pg.draw.circle(screen, (255, 255, 255), self.food_pos, food_radius, 2)
 
-        # 高亮食指指尖位置
         if finger_pos:
-            pg.draw.circle(screen, (255, 255, 0), finger_pos, 20, 3)
+            cursor_radius = max(15, int(20 * self.scale_factor))
+            pg.draw.circle(screen, (255, 255, 0), finger_pos, cursor_radius, 3)
             pg.draw.circle(screen, (255, 255, 0), finger_pos, 5)
 
-        # 绘制分数、关卡和游戏信息
         score_text = self.font_medium.render(
             f"分数: {self.score}", True, (255, 255, 255)
         )
@@ -673,11 +710,11 @@ class SnakeGame:
     def draw_cursor(self, screen, finger_pos):
         """绘制触摸光标"""
         if finger_pos:
-            # 根据捏合状态改变颜色
             color = (
                 (0, 255, 0) if self.pinch_active else (255, 255, 0)
             )  # 绿色当捏合，黄色默认
-            pg.draw.circle(screen, color, finger_pos, 15, 3)
+            cursor_radius = max(12, int(15 * self.scale_factor))
+            pg.draw.circle(screen, color, finger_pos, cursor_radius, 3)
             pg.draw.circle(screen, color, finger_pos, 5)
 
     def draw_button(self, screen, text, position, size, is_hovered=False):
@@ -710,7 +747,14 @@ class SnakeGame:
         )
 
         # 绘制开始按钮
-        start_button_rect = (self.width // 2 - 100, self.height // 2 - 30, 200, 60)
+        button_width = max(150, int(200 * self.scale_factor))
+        button_height = max(40, int(60 * self.scale_factor))
+        start_button_rect = (
+            self.width // 2 - button_width // 2,
+            self.height // 2 - 30,
+            button_width,
+            button_height,
+        )
         start_button_hover = self.is_point_in_rect(index_pos, start_button_rect) or (
             mouse_pos and self.is_point_in_rect(mouse_pos, start_button_rect)
         )
@@ -747,8 +791,13 @@ class SnakeGame:
                 dist = self.distance(index_pos, thumb_pos)
 
                 # 在手指位置绘制圆圈
-                pg.draw.circle(screen, (255, 0, 0), index_pos, 10, 2)  # 食指 - 红色
-                pg.draw.circle(screen, (255, 255, 0), thumb_pos, 10, 2)  # 拇指 - 黄色
+                finger_radius = max(8, int(10 * self.scale_factor))
+                pg.draw.circle(
+                    screen, (255, 0, 0), index_pos, finger_radius, 2
+                )  # 食指 - 红色
+                pg.draw.circle(
+                    screen, (255, 255, 0), thumb_pos, finger_radius, 2
+                )  # 拇指 - 黄色
 
                 # 如果距离接近阈值，绘制连接线
                 if dist < self.pinch_threshold * 2:
@@ -764,7 +813,6 @@ class SnakeGame:
                         pinch_text, (self.width // 2 - pinch_text.get_width() // 2, 30)
                     )
 
-        # 绘制鼠标位置（如果使用鼠标）
         if mouse_pos:
             pg.draw.circle(screen, (255, 255, 0), mouse_pos, 8)
 
@@ -778,17 +826,14 @@ class SnakeGame:
         overlay.fill((0, 0, 0, 200))
         screen.blit(overlay, (0, 0))
 
-        # 绘制标题
         title_text = self.font_large.render("复活挑战!", True, (255, 255, 0))
         screen.blit(title_text, (self.width // 2 - title_text.get_width() // 2, 50))
 
-        # 绘制剩余复活次数
         revive_text = self.font_medium.render(
             f"剩余复活次数: {self.current_revive_chances}", True, (255, 255, 255)
         )
         screen.blit(revive_text, (self.width // 2 - revive_text.get_width() // 2, 100))
 
-        # 绘制问题
         option_rects = []  # 初始化option_rects，防止未定义错误
         if self.current_question:
             question_text = self.font_medium.render(
@@ -798,16 +843,16 @@ class SnakeGame:
                 question_text, (self.width // 2 - question_text.get_width() // 2, 150)
             )
 
-            # 绘制选项
             options = self.current_question["options"]
-            option_height = 50
+            option_height = max(35, int(50 * self.scale_factor))
+            option_width = max(300, int(400 * self.scale_factor))
             start_y = 200
 
             for i, option in enumerate(options):
                 option_rect = (
-                    self.width // 2 - 200,
+                    self.width // 2 - option_width // 2,
                     start_y + i * (option_height + 10),
-                    400,
+                    option_width,
                     option_height,
                 )
                 is_hovered = self.is_point_in_rect(index_pos, option_rect) or (
@@ -822,7 +867,6 @@ class SnakeGame:
                 )
                 option_rects.append((i, option_rect))
         else:
-            # 如果没有问题，显示提示信息
             no_question_text = self.font_medium.render(
                 "正在加载题目...", True, (255, 255, 255)
             )
@@ -831,7 +875,6 @@ class SnakeGame:
                 (self.width // 2 - no_question_text.get_width() // 2, 150),
             )
 
-        # 检测选项点击
         selected_option = None
         pinch_detected = self.is_pinch_gesture(index_pos, thumb_pos)
 
@@ -843,11 +886,9 @@ class SnakeGame:
                     selected_option = option_idx
                     break
 
-        # 绘制触摸光标
         if index_pos:
             self.draw_cursor(screen, index_pos)
 
-        # 绘制鼠标位置（如果使用鼠标）
         if mouse_pos:
             pg.draw.circle(screen, (255, 255, 0), mouse_pos, 8)
 
@@ -856,15 +897,12 @@ class SnakeGame:
     def draw_game_over(
         self, screen, index_pos, thumb_pos, mouse_pos=None, mouse_click=False
     ):
-        # 先绘制游戏画面
         self.draw(screen, index_pos)
 
-        # 添加半透明覆盖层
         overlay = pg.Surface((self.width, self.height), pg.SRCALPHA)
         overlay.fill((0, 0, 0, 180))
         screen.blit(overlay, (0, 0))
 
-        # 绘制游戏结束文本
         game_over_text = self.font_large.render("游戏结束", True, (255, 0, 0))
         score_text = self.font_medium.render(
             f"分数: {self.score}", True, (255, 255, 255)
@@ -886,7 +924,6 @@ class SnakeGame:
             (self.width // 2 - level_text.get_width() // 2, self.height // 2 - 20),
         )
 
-        # 显示复活次数信息
         if self.current_revive_chances == 0:
             no_revive_text = self.font_medium.render(
                 "复活次数已用尽", True, (255, 0, 0)
@@ -899,8 +936,14 @@ class SnakeGame:
                 ),
             )
 
-        # 绘制重新开始按钮
-        restart_button_rect = (self.width // 2 - 100, self.height // 2 + 40, 200, 60)
+        button_width = max(150, int(200 * self.scale_factor))
+        button_height = max(40, int(60 * self.scale_factor))
+        restart_button_rect = (
+            self.width // 2 - button_width // 2,
+            self.height // 2 + 40,
+            button_width,
+            button_height,
+        )
         restart_hover = self.is_point_in_rect(index_pos, restart_button_rect) or (
             mouse_pos and self.is_point_in_rect(mouse_pos, restart_button_rect)
         )
@@ -912,8 +955,12 @@ class SnakeGame:
             is_hovered=restart_hover,
         )
 
-        # 绘制返回主菜单按钮
-        menu_button_rect = (self.width // 2 - 100, self.height // 2 + 120, 200, 60)
+        menu_button_rect = (
+            self.width // 2 - button_width // 2,
+            self.height // 2 + 120,
+            button_width,
+            button_height,
+        )
         menu_hover = self.is_point_in_rect(index_pos, menu_button_rect) or (
             mouse_pos and self.is_point_in_rect(mouse_pos, menu_button_rect)
         )
@@ -925,7 +972,6 @@ class SnakeGame:
             is_hovered=menu_hover,
         )
 
-        # 检测按钮点击
         buttons_clicked = []
         pinch_detected = self.is_pinch_gesture(index_pos, thumb_pos)
 
@@ -935,11 +981,9 @@ class SnakeGame:
             elif menu_hover:
                 buttons_clicked.append("menu")
 
-        # 绘制触摸光标
         if index_pos:
             self.draw_cursor(screen, index_pos)
 
-        # 绘制鼠标位置（如果使用鼠标）
         if mouse_pos:
             pg.draw.circle(screen, (255, 255, 0), mouse_pos, 8)
 
@@ -947,7 +991,7 @@ class SnakeGame:
 
 
 class Game:
-    def __init__(self):
+    def __init__(self, scale_factor=1.0):
         pg.init()
         pg.display.set_caption("贪吃蛇游戏 - 手势与鼠标控制")
 
@@ -960,14 +1004,18 @@ class Game:
             max_hands=1,
         )
 
-        self.winsize = self.hand.get_img_size()
+        original_size = self.hand.get_img_size()
+        self.scale_factor = scale_factor
+        self.winsize = (
+            int(original_size[0] * scale_factor),
+            int(original_size[1] * scale_factor),
+        )
         self.screen = pg.display.set_mode(self.winsize)
         self.clock = pg.time.Clock()
         self.quit = False
 
-        self.snake_game = SnakeGame(self.winsize[0], self.winsize[1])
+        self.snake_game = SnakeGame(original_size[0], original_size[1], scale_factor)
 
-        # 游戏状态
         self.game_state = "start_screen"
         self.mouse_clicked = False
 
@@ -985,19 +1033,19 @@ class Game:
         success, processed_img, landmarks = self.hand.process_frame()
 
         if success:
-            # 将OpenCV图像转换为Pygame表面
             frame_surface = self.cv2_to_pygame(cv2.flip(processed_img, 1))
+
+            if self.scale_factor != 1.0:
+                frame_surface = pg.transform.scale(frame_surface, self.winsize)
+
             self.screen.blit(frame_surface, (0, 0))
 
-            # 获取手指坐标
             index_pos, thumb_pos = self.get_finger_positions(landmarks)
 
-            # 获取鼠标状态
             mouse_pos = pg.mouse.get_pos()
             mouse_click = getattr(self, "mouse_clicked", False)
             self.mouse_clicked = False  # 重置点击状态
 
-            # 根据游戏状态处理
             self.handle_game_states(index_pos, thumb_pos, mouse_pos, mouse_click)
 
             pg.display.flip()
@@ -1005,11 +1053,8 @@ class Game:
 
     def cv2_to_pygame(self, cv2_img):
         """将OpenCV图像转换为Pygame表面"""
-        # 将BGR转换为RGB
         rgb_img = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2RGB)
-        # 转置图像（旋转90度）
         rotated_img = cv2.transpose(rgb_img)
-        # 创建Pygame表面
         return pg.surfarray.make_surface(rotated_img)
 
     def get_finger_positions(self, landmarks):
@@ -1020,19 +1065,22 @@ class Game:
         if landmarks and len(landmarks) > 0:
             img_height, img_width = self.winsize[1], self.winsize[0]
 
-            # 获取原始坐标
             original_index_pos = landmarks[0][8]  # 食指指尖
             original_thumb_pos = landmarks[0][4]  # 拇指指尖
 
-            # 镜像坐标（因为摄像头画面是镜像的）
-            index_pos = (img_width - original_index_pos[0], original_index_pos[1])
-            thumb_pos = (img_width - original_thumb_pos[0], original_thumb_pos[1])
+            index_pos = (
+                img_width - int(original_index_pos[0] * self.scale_factor),
+                int(original_index_pos[1] * self.scale_factor),
+            )
+            thumb_pos = (
+                img_width - int(original_thumb_pos[0] * self.scale_factor),
+                int(original_thumb_pos[1] * self.scale_factor),
+            )
 
         return index_pos, thumb_pos
 
     def handle_keyboard(self, event):
         """处理键盘输入"""
-        # 全局快捷键
         if event.key == pg.K_q:
             self.quit = True
         elif event.key == pg.K_r and self.game_state == "game_over":
@@ -1044,11 +1092,12 @@ class Game:
         elif event.key == pg.K_b and self.game_state == "playing":
             self.game_state = "start_screen"
         elif event.key == pg.K_t:  # 调整捏合阈值
-            self.snake_game.pinch_threshold += 5
+            self.snake_game.pinch_threshold += 5 * self.scale_factor
             print(f"捏合阈值调整为: {self.snake_game.pinch_threshold}")
         elif event.key == pg.K_y:  # 减小捏合阈值
             self.snake_game.pinch_threshold = max(
-                10, self.snake_game.pinch_threshold - 5
+                10 * self.scale_factor,
+                self.snake_game.pinch_threshold - 5 * self.scale_factor,
             )
             print(f"捏合阈值调整为: {self.snake_game.pinch_threshold}")
 
@@ -1068,42 +1117,34 @@ class Game:
                 self.snake_game.update(index_pos, thumb_pos)
                 self.snake_game.draw(self.screen, index_pos)
             else:
-                # 检查是否有复活机会
                 if self.snake_game.current_revive_chances > 0:
-                    # 进入复活问题状态
                     self.snake_game.current_question = (
                         self.snake_game.question_manager.get_random_question()
                     )
                     self.snake_game.revive_in_progress = True
                     self.game_state = "revive_question"
                 else:
-                    # 没有复活机会，直接游戏结束
                     self.game_state = "game_over"
 
         elif self.game_state == "revive_question":
-            # 显示复活问题
             selected_option = self.snake_game.draw_revive_question_screen(
                 self.screen, index_pos, thumb_pos, mouse_pos, mouse_click
             )
 
             if selected_option is not None:
-                # 检查答案
                 if self.snake_game.question_manager.check_answer(
                     self.snake_game.current_question, selected_option
                 ):
-                    # 答对了，复活玩家
                     self.snake_game.revive_player()
                     self.game_state = "playing"
 
                     self.snake_game.current_revive_chances -= 1
                     print("回答正确! 已复活。")
                 else:
-                    # 答错了，直接游戏结束
                     print(
                         f"回答错误! 剩余复活次数: {self.snake_game.current_revive_chances}"
                     )
 
-                    # 直接游戏结束
                     self.game_state = "game_over"
 
         elif self.game_state == "game_over":
@@ -1124,7 +1165,10 @@ class Game:
 
 
 def main():
-    game = Game()
+    # 设置放大系数
+    scale_factor = 1.0
+
+    game = Game(scale_factor=scale_factor)
 
     print("贪吃蛇游戏说明:")
     print("- 移动食指来控制蛇头")
@@ -1134,7 +1178,8 @@ def main():
     print("- 游戏共有10关，难度递增")
     print("- 每吃5个食物进入下一关")
     print("- 有3次复活机会，答对问题可以复活")
-    print("- 捏合阈值:", game.snake_game.pinch_threshold)
+    print(f"- 当前放大系数: {scale_factor}")
+    print(f"- 捏合阈值: {game.snake_game.pinch_threshold}")
 
     while not game.quit:
         game.loop()
