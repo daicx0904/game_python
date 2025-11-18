@@ -5,7 +5,7 @@ __all__ = ["get_question", "convert"]
 
 def get_question() -> str:
     client = OpenAI(
-        api_key="sk-35740113636c45d1be0454f5beff359c",
+        api_key="",
         base_url="https://api.deepseek.com/v1",
     )
 
